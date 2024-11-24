@@ -1,50 +1,49 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
+using ModLoader.Framework;
+using ModLoader.Framework.Attributes;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Debug = UnityEngine.Debug;
 
 namespace Triquetra.Input
 {
-    public class Plugin : VTOLMOD
+    [ItemId("danku-triquetra2")]
+    public class Plugin : VtolMod
     {
-
-        public static Plugin Instance;
-
         private GameObject imguiObject;
         private static string bindingsPath;
 
+        public static bool asyncLoadingBindings;
+
         public static void Write(object msg)
         {
-            Instance.Log(msg);
+            Debug.Log(msg);
         }
 
-        public override void ModLoaded()
+        public void Awake()
         {
-            Instance = this;
-            base.ModLoaded();
             Enable();
         }
 
         public void Enable()
         {
-            Log("Creating Triquetra Input Object");
             imguiObject = new GameObject();
             imguiObject.AddComponent<TriquetraInputBinders>();
             GameObject.DontDestroyOnLoad(imguiObject);
 
             bindingsPath = PilotSaveManager.saveDataPath + "/triquetrainput.xml";
-            LoadBindings();
+            //LoadBindings();
+            StartCoroutine(LoadBindingsCoroutine());
         }
 
         public void Disable()
         {
-            Log("Destroying Triquetra Input Object");
+            Debug.Log("Destroying Triquetra Input Object");
             GameObject.Destroy(imguiObject);
         }
 
@@ -60,7 +59,7 @@ namespace Triquetra.Input
             using (StringWriter writer = new StringWriter())
             {
                 serializer.Serialize(writer, Binding.Bindings);
-                Instance.Log(writer.ToString());
+                Debug.Log(writer.ToString());
             }
             using (TextWriter writer = new StreamWriter(bindingsPath))
             {
@@ -70,6 +69,7 @@ namespace Triquetra.Input
 
         public static void LoadBindings()
         {
+            Stopwatch sw = Stopwatch.StartNew();
             XmlSerializer serializer = new XmlSerializer(Binding.Bindings.GetType());
             if (File.Exists(bindingsPath))
             {
@@ -81,6 +81,32 @@ namespace Triquetra.Input
                     }
                 }
             }
+        }
+
+        private static IEnumerator LoadBindingsCoroutine()
+        {
+            asyncLoadingBindings = true;
+            var task = AsyncLoadBindings();
+            yield return new WaitUntil(() => task.IsCompleted);
+            asyncLoadingBindings = false;
+        }
+
+        private static async Task AsyncLoadBindings()
+        {
+            XmlSerializer serializer = new XmlSerializer(typeof(List<Binding>));
+            if (File.Exists(bindingsPath))
+            {
+                using (Stream reader = new BufferedStream(new FileStream(bindingsPath, FileMode.Open)))
+                {
+                    var bindings = await Task.Run(() => (List<Binding>)serializer.Deserialize(reader));
+                    Binding.Bindings = bindings;
+                }
+            }
+        }
+
+        public override void UnLoad()
+        {
+            Disable();
         }
     }
 }

@@ -5,6 +5,7 @@ using System.Xml.Serialization;
 using SharpDX.DirectInput;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
+using VTOLAPI;
 using DeviceType = SharpDX.DirectInput.DeviceType;
 
 namespace Triquetra.Input
@@ -36,8 +37,22 @@ namespace Triquetra.Input
         public ControllerAction OutputAction = ControllerAction.None;
         public ThumbstickDirection ThumbstickDirection = ThumbstickDirection.None;
         public string VRInteractName = "";
+        public float TargetFoV = 0;
         public KeyboardKey KeyboardKey;
         [XmlIgnore] public DeviceInstance JoystickDevice;
+
+        private VTModVariables _fs2ModVariables;
+
+        public VTModVariables FS2ModVariables
+        {
+            get
+            {
+                if (_fs2ModVariables != null)
+                    return _fs2ModVariables;
+                VTAPI.TryGetModVariables("Danku-FS2", out _fs2ModVariables);
+                return _fs2ModVariables;
+            }
+        }
 
         // For the Xml Serialize/Deserialize
         public string ProductGuid
@@ -148,6 +163,34 @@ namespace Triquetra.Input
             {
                 ControllerActions.Print(this, joystickValue);
             }
+            else if (OutputAction == ControllerAction.FlatscreenCenterInteract)
+            {
+                if (GetButtonPressed(joystickValue))
+                {
+                    if (FS2ModVariables != null)
+                    {
+                        FS2ModVariables.Invoke("InteractCenter");
+                    }
+                    else
+                    {
+                        Debug.Log($"FS2 Mod Variables null!");
+                    }
+                }
+            }
+            else if (OutputAction == ControllerAction.FlatscreenFoV)
+            {
+                if (GetButtonPressed(joystickValue))
+                {
+                    if (FS2ModVariables != null)
+                    {
+                        FS2ModVariables.TrySetValue("SetZoom", TargetFoV);
+                    }
+                    else
+                    {
+                        Debug.Log($"FS2 Mod Variables null!");
+                    }
+                }
+            }
             if (Plugin.IsFlyingScene()) // Only try and get throttle in a flying scene
             {
                 if (OutputAction == ControllerAction.Throttle)
@@ -223,6 +266,11 @@ namespace Triquetra.Input
                 else if (OutputAction == ControllerAction.PTT)
                 {
                     ControllerActions.Radio.PTT(this, joystickValue);
+                }
+                else if (OutputAction == ControllerAction.ToggleMouseFly)
+                {
+                    if (GetButtonPressed(joystickValue))
+                        TriquetraInputBinders.useMouseFly = !TriquetraInputBinders.useMouseFly;
                 }
                 else if (OutputAction == ControllerAction.VRInteract)
                 {

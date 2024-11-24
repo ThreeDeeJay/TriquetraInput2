@@ -16,6 +16,7 @@ namespace Triquetra.Input
 
         [XmlIgnore] public bool PrimaryKeyDown = false;
         [XmlIgnore] public bool SecondaryKeyDown = false;
+        
         [XmlIgnore] public float PrimaryPressTime;
         [XmlIgnore] public float SecondaryPressTime;
 
@@ -24,24 +25,28 @@ namespace Triquetra.Input
 
         [XmlAttribute] public float Smoothing = 0.5f;
 
+        [XmlIgnore] public int t = 32000;
+
         public int GetAxisTranslatedValue()
         {
             if (UnityEngine.Input.GetKeyDown(PrimaryKey))
                 PrimaryPressTime = Time.time;
-
             if (UnityEngine.Input.GetKeyDown(SecondaryKey))
                 SecondaryPressTime = Time.time;
 
             bool isPrimaryPressed = UnityEngine.Input.GetKey(PrimaryKey);
             bool isSecondaryPressed = UnityEngine.Input.GetKey(SecondaryKey);
 
-            int translatedValue = Binding.AxisMiddle;
             if (isPrimaryPressed && !isSecondaryPressed)
-                translatedValue = (int)Mathf.Lerp(Binding.AxisMiddle, Binding.AxisMax, (Time.time - PrimaryPressTime) / Smoothing);
+                t = (int)Mathf.Lerp(t, Binding.AxisMax, Time.deltaTime / Smoothing);
             else if (isSecondaryPressed && !isPrimaryPressed)
-                translatedValue = (int)Mathf.Lerp(Binding.AxisMiddle, Binding.AxisMin, (Time.time - SecondaryPressTime) / Smoothing);
+                t = (int)Mathf.Lerp(t, Binding.AxisMin, Time.deltaTime / Smoothing);
+            
+            if (!isPrimaryPressed && !isSecondaryPressed)
+                t = (int)Mathf.Lerp(t, Binding.AxisMiddle, Time.deltaTime / Smoothing);
+            
 
-            return translatedValue;
+            return t;
         }
     }
 }

@@ -30,6 +30,9 @@ namespace Triquetra.Input
         NightVisionGoggles,
         PTT,
         VRInteract,
+        ToggleMouseFly,
+        FlatscreenCenterInteract,
+        FlatscreenFoV,
         Print
     }
 
@@ -338,6 +341,11 @@ namespace Triquetra.Input
                 stickVector.z = binding.GetAxisAsFloat(joystickValue) - 0.5f;
             }
 
+            public static Vector3 GetStick()
+            {
+                return stickVector * 2;
+            }
+
             public static void UpdateStick()
             {
                 if (joystick == null)
@@ -456,7 +464,12 @@ namespace Triquetra.Input
 
             internal static VRJoystick FindJoystick()
             {
-                return GameObject.FindObjectOfType<VRJoystick>(false);
+                var joysticks = GameObject.FindObjectsOfType<VRJoystick>(false);
+
+                var joystick = joysticks.FirstOrDefault(stick => stick.name == "joyInteractable_sideFront") ??
+                               joysticks.FirstOrDefault();
+
+                return joystick;
             }
 
             private static bool menuButtonPressed = false;

@@ -1,13 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 using SharpDX.DirectInput;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
-using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 // TODO: Jettison button requires push in (menu button)
 // TODO: Fix DDArmory bug where swept wings are used as throttle instead of real throttle
@@ -28,6 +23,16 @@ namespace Triquetra.Input
         public bool Enabled = true;
         private string textFilter = "";
         private Dictionary<Binding, bool> collapsedBindings = new Dictionary<Binding, bool>();
+
+        private void Awake()
+        {
+            SceneManager.sceneLoaded += (arg0, mode) =>
+            {
+                useMouseFly = false;
+                Cursor.visible = true;
+                Cursor.lockState = CursorLockMode.None;
+            };
+        }
 
         public void OnGUI()
         {
@@ -60,7 +65,7 @@ namespace Triquetra.Input
                 }
                 catch (Exception e)
                 {
-                    Plugin.Instance.Log(e.Message);
+                    Debug.Log(e.Message);
                 }
             }
             GUILayout.EndHorizontal();
@@ -83,6 +88,14 @@ namespace Triquetra.Input
                 }
             }
             GUILayout.EndHorizontal();
+            
+            GUILayout.BeginVertical();
+            {
+                useMouseFly = GUILayout.Toggle(useMouseFly, "Use Mouse Fly");
+                GUILayout.Label($"Mouse Sensitivity: {_mouseSensitivity}");
+                _mouseSensitivity = GUILayout.HorizontalSlider(_mouseSensitivity, 0.5f, 5f);
+            }
+            GUILayout.EndVertical();
 
             // GUILayout.Label(ControllerActions.Joystick.joystick == null ? "No joystick found" : "Joystick found");
             // GUILayout.Label(ControllerActions.Throttle.throttle == null ? "No throttle found" : "Throttle found");
@@ -102,6 +115,15 @@ namespace Triquetra.Input
                 textFilter = GUILayout.TextField(textFilter);
             }
             GUILayout.EndHorizontal();
+
+            if (Plugin.asyncLoadingBindings)
+            {
+                GUILayout.BeginHorizontal();
+                {
+                    GUILayout.Label($"Loading Bindings...");
+                }
+                GUILayout.EndHorizontal();
+            }
 
             scrollPosition = GUILayout.BeginScrollView(scrollPosition);
             {
@@ -286,6 +308,12 @@ namespace Triquetra.Input
                                 binding.VRInteractName = GUILayout.TextField(binding.VRInteractName);
                             }
                             GUILayout.EndHorizontal();
+                        }
+
+                        if (binding.OutputAction == ControllerAction.FlatscreenFoV)
+                        {
+                                GUILayout.Label("Target FoV: " + binding.TargetFoV);
+                                binding.TargetFoV = GUILayout.HorizontalSlider(binding.TargetFoV, 30f, 120f);
                         }
 
                         if (binding.OutputActionSelectOpen)
@@ -537,6 +565,13 @@ namespace Triquetra.Input
                             }
                             GUILayout.EndHorizontal();
                         }
+                        
+                        
+                        if (binding.OutputAction == ControllerAction.FlatscreenFoV)
+                        {
+                            GUILayout.Label("Target FoV: " + binding.TargetFoV);
+                            binding.TargetFoV = GUILayout.HorizontalSlider(binding.TargetFoV, 30f, 120f);
+                        }
 
                         if (binding.Controller != null)
                         {
@@ -651,6 +686,12 @@ namespace Triquetra.Input
             }
         }
 
+        public static bool useMouseFly = false;
+
+        private float _mouseSensitivity = 5f;
+
+        private Vector3 _mouseXY = Vector3.zero;
+
         public void Update()
         {
             if (detectingKeyKK != null)
@@ -666,10 +707,44 @@ namespace Triquetra.Input
 
             if (Plugin.IsFlyingScene())
             {
-                ControllerActions.Joystick.UpdateStick();
+                /*if (UnityEngine.Input.GetKeyDown(KeyCode.LeftAlt))
+                    _useMouseFly = !_useMouseFly;*/
+                
+                if (useMouseFly)
+                {
+                    Cursor.visible = false;
+                    Cursor.lockState = CursorLockMode.Locked;
+                    UpdateMouse();
+                }
+                else
+                {
+                    Cursor.visible = true;
+                    Cursor.lockState = CursorLockMode.None;
+                    ControllerActions.Joystick.UpdateStick();
+                }
                 ControllerActions.Joystick.UpdateThumbstick();
                 ControllerActions.Throttle.UpdateThumbstick();
             }
+        }
+
+        private void UpdateMouse()
+        {
+            var currJoy = ControllerActions.Joystick.GetStick();
+            
+            var x = UnityEngine.Input.GetAxis("Mouse X") * _mouseSensitivity;
+            var y = UnityEngine.Input.GetAxis("Mouse Y") * _mouseSensitivity;
+
+            
+            Vector3 mouseFly = new Vector3(y, 0, -x) + currJoy;
+
+            Vector3 finalStick = Vector3.Lerp(_mouseXY, mouseFly, 3.5f * Time.deltaTime);
+
+            finalStick.x = Mathf.Clamp(finalStick.x, -1f, 1f);
+            finalStick.z = Mathf.Clamp(finalStick.z, -1f, 1f);
+
+            _mouseXY = finalStick;
+
+            ControllerActions.Joystick.joystick.OnSetStick.Invoke(_mouseXY);
         }
 
         int frameCount = 0;
