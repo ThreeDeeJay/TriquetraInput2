@@ -33,6 +33,7 @@ namespace Triquetra.Input
         ToggleMouseFly,
         FlatscreenCenterInteract,
         FlatscreenFoV,
+        FlatscreenMoveCamera,
         Print
     }
 
@@ -489,6 +490,70 @@ namespace Triquetra.Input
                     joystick.OnMenuButtonUp?.Invoke();
                 }
             }
+        }
+
+        public static class FS2Camera
+        {
+            #region Thumbstick
+            public static float ThumbstickUp = 0;
+            public static float ThumbstickRight = 0;
+            public static float ThumbstickDown = 0;
+            public static float ThumbstickLeft = 0;
+            private static bool thumbstickWasZero = false;
+            private static bool thumbstickWasMoving = false;
+            public static void UpdateThumbstick()
+            {
+                var modVariables = Binding.FS2ModVariables;
+                if (modVariables == null)
+                    return;
+
+                Vector2 vector = new Vector2();
+                vector.x += ThumbstickRight;
+                vector.x -= ThumbstickLeft;
+                vector.y += ThumbstickUp;
+                vector.y -= ThumbstickDown;
+
+                if (vector != Vector2.zero)
+                {
+                    thumbstickWasZero = false;
+                    modVariables.TrySetValue("RotateCamera", vector);
+                    thumbstickWasMoving = true;
+                }
+                else
+                {
+                    if (!thumbstickWasZero)
+                    {
+                        modVariables.TrySetValue("RotateCamera", vector);
+                        thumbstickWasZero = true;
+                        thumbstickWasMoving = true;
+                    }
+                    else if (thumbstickWasMoving)
+                    {
+                        modVariables.TrySetValue("RotateCamera", Vector2.zero);
+                        thumbstickWasMoving = false;
+                    }
+                }
+            }
+
+            public static void Thumbstick(Binding binding, int joystickValue)
+            {
+                switch (binding.ThumbstickDirection)
+                {
+                    case ThumbstickDirection.Up:
+                        ThumbstickUp = binding.GetAxisAsFloat(joystickValue);
+                        break;
+                    case ThumbstickDirection.Down:
+                        ThumbstickDown = binding.GetAxisAsFloat(joystickValue);
+                        break;
+                    case ThumbstickDirection.Right:
+                        ThumbstickRight = binding.GetAxisAsFloat(joystickValue);
+                        break;
+                    case ThumbstickDirection.Left:
+                        ThumbstickLeft = binding.GetAxisAsFloat(joystickValue);
+                        break;
+                }
+            }
+            #endregion
         }
 
         public static void Print(Binding binding, int joystickValue)

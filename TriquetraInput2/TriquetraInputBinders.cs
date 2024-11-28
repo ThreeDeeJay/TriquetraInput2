@@ -274,7 +274,7 @@ namespace Triquetra.Input
                         GUILayout.EndHorizontal();
 
                         // Thumbstick Direction
-                        if (binding.OutputAction == ControllerAction.ThrottleThumbStick || binding.OutputAction == ControllerAction.JoystickThumbStick)
+                        if (binding.OutputAction == ControllerAction.ThrottleThumbStick || binding.OutputAction == ControllerAction.JoystickThumbStick || binding.OutputAction == ControllerAction.FlatscreenMoveCamera)
                         {
                             // Thumbstick Direction [Select] / Thumbstick Direction [Cancel]
                             GUILayout.BeginHorizontal();
@@ -530,7 +530,7 @@ namespace Triquetra.Input
                         }
 
                         // Thumbstick Direction
-                        if (binding.OutputAction == ControllerAction.ThrottleThumbStick || binding.OutputAction == ControllerAction.JoystickThumbStick)
+                        if (binding.OutputAction == ControllerAction.ThrottleThumbStick || binding.OutputAction == ControllerAction.JoystickThumbStick || binding.OutputAction == ControllerAction.FlatscreenMoveCamera)
                         {
                             // Thumbstick Direction [Select] / Thumbstick Direction [Cancel]
                             GUILayout.BeginHorizontal();
@@ -572,7 +572,7 @@ namespace Triquetra.Input
                             GUILayout.Label("Target FoV: " + binding.TargetFoV);
                             binding.TargetFoV = GUILayout.HorizontalSlider(binding.TargetFoV, 30f, 120f);
                         }
-
+ 
                         if (binding.Controller != null)
                         {
                             JoystickUpdate value = binding.Controller.RawState[binding.RawOffset];
@@ -705,6 +705,8 @@ namespace Triquetra.Input
             TriquetraInputJoysticks.PollActiveJoysticks();
             TriquetraInputJoysticks.HandleKeyboardBindings();
 
+            ControllerActions.FS2Camera.UpdateThumbstick();
+            
             if (Plugin.IsFlyingScene())
             {
                 /*if (UnityEngine.Input.GetKeyDown(KeyCode.LeftAlt))
@@ -718,7 +720,14 @@ namespace Triquetra.Input
                 }
                 else
                 {
-                    Cursor.visible = true;
+                    if (Binding.FS2ModVariables.TryGetValue("CursorHideTimer", out var timer))
+                    {
+                        Cursor.visible = (float)timer > 0;
+                    }
+                    else
+                    {
+                        Cursor.visible = true;
+                    }
                     Cursor.lockState = CursorLockMode.None;
                     ControllerActions.Joystick.UpdateStick();
                 }

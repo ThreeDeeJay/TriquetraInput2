@@ -41,9 +41,9 @@ namespace Triquetra.Input
         public KeyboardKey KeyboardKey;
         [XmlIgnore] public DeviceInstance JoystickDevice;
 
-        private VTModVariables _fs2ModVariables;
+        private static VTModVariables _fs2ModVariables;
 
-        public VTModVariables FS2ModVariables
+        public static VTModVariables FS2ModVariables
         {
             get
             {
@@ -165,16 +165,14 @@ namespace Triquetra.Input
             }
             else if (OutputAction == ControllerAction.FlatscreenCenterInteract)
             {
-                if (GetButtonPressed(joystickValue))
+                if (FS2ModVariables != null)
                 {
-                    if (FS2ModVariables != null)
-                    {
-                        FS2ModVariables.Invoke("InteractCenter");
-                    }
-                    else
-                    {
-                        Debug.Log($"FS2 Mod Variables null!");
-                    }
+                    
+                    FS2ModVariables.TrySetValue("InteractCenter", GetButtonPressed(joystickValue));
+                }
+                else
+                {
+                    Debug.Log($"FS2 Mod Variables null!");
                 }
             }
             else if (OutputAction == ControllerAction.FlatscreenFoV)
@@ -190,6 +188,10 @@ namespace Triquetra.Input
                         Debug.Log($"FS2 Mod Variables null!");
                     }
                 }
+            }
+            else if (OutputAction == ControllerAction.FlatscreenMoveCamera)
+            {
+                ControllerActions.FS2Camera.Thumbstick(this, joystickValue);
             }
             if (Plugin.IsFlyingScene()) // Only try and get throttle in a flying scene
             {
