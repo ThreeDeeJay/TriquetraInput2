@@ -3,13 +3,25 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Serialization;
 using SharpDX.DirectInput;
+using Triquetra.Input.CustomHandController;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
 using VTOLAPI;
 using DeviceType = SharpDX.DirectInput.DeviceType;
+using Object = UnityEngine.Object;
 
 namespace Triquetra.Input
 {
+    public enum VRInteractAction
+    {
+        Interact,
+        Move,
+        TriggerAxis,
+        ThumbstickAxis,
+        ThumbstickButton,
+        PrimaryButton,
+        SecondaryButton
+    }
+    
     public class Binding
     {
         public const int AxisMin = 0;
@@ -35,6 +47,10 @@ namespace Triquetra.Input
         public TwoAxis SelectedTwoAxis = TwoAxis.Positive;
         public POVFacing POVDirection = POVFacing.Up;
         public ControllerAction OutputAction = ControllerAction.None;
+        
+        public VRInteractAction InputAction = VRInteractAction.Interact;
+        public float Speed = 0.1f;
+        
         public ThumbstickDirection ThumbstickDirection = ThumbstickDirection.None;
         public string VRInteractName = "";
         public float TargetFoV = 0;
@@ -42,6 +58,9 @@ namespace Triquetra.Input
         [XmlIgnore] public DeviceInstance JoystickDevice;
 
         private static VTModVariables _fs2ModVariables;
+        
+        [XmlIgnore]
+        private Vector3 _lastPosition = Vector3.zero;
 
         public static VTModVariables FS2ModVariables
         {
@@ -91,6 +110,7 @@ namespace Triquetra.Input
         [XmlIgnore] public bool IsOffsetAxis => !IsOffsetButton && !IsOffsetPOV;
 
         [XmlIgnore] public bool OffsetSelectOpen = false;
+        [XmlIgnore] public bool VRInteractActionSelectOpen = false;
         [XmlIgnore] public bool OutputActionSelectOpen = false;
         [XmlIgnore] public bool POVDirectionSelectOpen = false;
         [XmlIgnore] public bool DetectingOffset = false;
@@ -98,6 +118,9 @@ namespace Triquetra.Input
         [XmlIgnore] public bool AxisCenteringSelectOpen = false;
 
         [XmlIgnore] public TriquetraJoystick.JoystickUpdated bindingDelegate;
+        
+        
+        [XmlIgnore] public TriquetraInput_VRHandController handController = null;
 
         public Binding()
         {
@@ -159,11 +182,7 @@ namespace Triquetra.Input
 
         public void RunAction(int joystickValue)
         {
-            if (OutputAction == ControllerAction.Print)
-            {
-                ControllerActions.Print(this, joystickValue);
-            }
-            else if (OutputAction == ControllerAction.FlatscreenCenterInteract)
+            if (OutputAction == ControllerAction.FlatscreenCenterInteract)
             {
                 if (FS2ModVariables != null)
                 {
@@ -192,6 +211,23 @@ namespace Triquetra.Input
             else if (OutputAction == ControllerAction.FlatscreenMoveCamera)
             {
                 ControllerActions.FS2Camera.Thumbstick(this, joystickValue);
+            }
+            else if (OutputAction == ControllerAction.NewVRInteract) // imitating controller for custom interactables maybe
+            {
+                if (Plugin.IsFlyingScene())
+                {
+                    var vehicleObject = VTAPI.GetPlayersVehicleGameObject();
+                    if (vehicleObject != null)
+                    {
+                        var interactables = vehicleObject.GetComponentsInChildren<VRInteractable>();
+                        var targetInteractable =
+                            interactables.FirstOrDefault(x => x.interactableName == VRInteractName);
+                        if (targetInteractable)
+                        {
+                            RunVRInteractAction(targetInteractable, joystickValue);
+                        }
+                    }
+                }
             }
             if (Plugin.IsFlyingScene()) // Only try and get throttle in a flying scene
             {
@@ -287,6 +323,121 @@ namespace Triquetra.Input
                             Interactions.AntiInteract(interactable);
                     }
                 }
+            }
+        }
+
+        public void RunVRInteractAction(VRInteractable interactable, int joystickValue)
+        {
+            if (handController)
+            {
+                if (!GetButtonPressed(joystickValue))
+                {
+                    switch (InputAction)
+                    {
+                        case VRInteractAction.PrimaryButton:
+                            handController.ThumbButtonReleased();
+                            break;
+                        case VRInteractAction.SecondaryButton:
+                            handController.SecondaryThumbButtonReleased();
+                            break;
+                        case VRInteractAction.ThumbstickButton:
+                            handController.ThumbstickButtonReleased();
+                            break;
+                    }
+                    
+                    if (interactable.activeController == handController)
+                        interactable.UnClick(handController);
+                    
+                    Object.Destroy(handController.gameObject);
+                    handController = null;
+                    _lastPosition = Vector3.zero;
+
+                    
+                    return;
+                }
+            }
+            else
+            {
+                if (!GetButtonPressed(joystickValue))
+                    return;
+                
+                var parentA = new GameObject("TriquetraHandController_ParentA");
+                var parentB = new GameObject("TriquetraHandController_ParentB");
+                parentB.transform.parent = parentA.transform;
+                var handControllerObject = new GameObject($"TriquetraHandController_{VRInteractName}");
+                handControllerObject.transform.parent = parentB.transform;
+                
+                handController = handControllerObject.AddComponent<TriquetraInput_VRHandController>();
+                var gloveAnimation = handControllerObject.AddComponent<TriquetraInput_GloveAnimation>();
+                handController.gloveAnimation = gloveAnimation;
+                
+                _lastPosition = Vector3.zero;
+                
+                if (interactable.activeController)
+                    interactable.StopInteraction();
+                handController.activeInteractable = null;
+                handController.hoverInteractable = interactable;
+                interactable.Click(handController);
+            }
+            
+            float joystickAxis = GetAxisAsFloat(joystickValue) - 0.5f;
+            
+            switch (InputAction)
+            {
+                case VRInteractAction.Move:
+                    Vector3 moveDir = Vector3.zero;
+                    
+                    
+                    
+                    switch (ThumbstickDirection)
+                    {
+                        case ThumbstickDirection.Up:
+                            moveDir.y += joystickAxis;
+                            break;
+                        case ThumbstickDirection.Right:
+                            moveDir.x += joystickAxis;
+                            break;
+                        case ThumbstickDirection.Down:
+                            moveDir.y -= joystickAxis;
+                            break;
+                        case ThumbstickDirection.Left:
+                            moveDir.x -= joystickAxis;
+                            break;
+                    }
+                    _lastPosition += moveDir * Speed * Time.deltaTime;
+                    handController.transform.position = interactable.transform.TransformPoint(_lastPosition);
+                    break;
+                case VRInteractAction.PrimaryButton:
+                    handController.ThumbButtonPressed();
+                    break;
+                case VRInteractAction.SecondaryButton:
+                    handController.SecondaryThumbButtonPressed();
+                    break;
+                case VRInteractAction.ThumbstickAxis:
+                    Vector2 axis = Vector3.zero;
+                    switch (ThumbstickDirection)
+                    {
+                        case ThumbstickDirection.Up:
+                            axis.y += joystickAxis;
+                            break;
+                        case ThumbstickDirection.Right:
+                            axis.x += joystickAxis;
+                            break;
+                        case ThumbstickDirection.Down:
+                            axis.y -= joystickAxis;
+                            break;
+                        case ThumbstickDirection.Left:
+                            axis.x -= joystickAxis;
+                            break;
+                    }
+                    handController.StickAxis(axis * Speed * Time.deltaTime);
+                    break;
+                case VRInteractAction.ThumbstickButton:
+                    handController.ThumbstickButtonPressed();
+                    break;
+                case VRInteractAction.TriggerAxis:
+                    handController.TriggerAxis(GetAxisAsFloat(joystickValue));
+                    break;
             }
         }
 

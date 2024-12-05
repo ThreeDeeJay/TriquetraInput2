@@ -310,6 +310,80 @@ namespace Triquetra.Input
                             GUILayout.EndHorizontal();
                         }
 
+                        if (binding.OutputAction == ControllerAction.NewVRInteract)
+                        {
+                            GUILayout.Label("This only works in flying scenes.");
+                            GUILayout.BeginHorizontal();
+                            {
+                                GUILayout.Label("VRInteractable Name: ");
+                                binding.VRInteractName = GUILayout.TextField(binding.VRInteractName);
+                            }
+                            GUILayout.EndHorizontal();
+                            
+                            GUILayout.BeginHorizontal();
+                            {
+                                GUILayout.Label("VRInteractable Action: ");
+                                if (GUILayout.Button(binding.InputAction.ToString()))
+                                {
+                                    binding.VRInteractActionSelectOpen = !binding.VRInteractActionSelectOpen;
+                                }
+                            }
+                            GUILayout.EndHorizontal();
+                            
+                            if (binding.InputAction == VRInteractAction.Move || binding.InputAction == VRInteractAction.ThumbstickAxis)
+                            {
+                                GUILayout.BeginHorizontal();
+                                {
+                                    GUILayout.Label("Speed: ");
+                                    if (float.TryParse(GUILayout.TextField(binding.Speed.ToString()),
+                                            out float speed))
+                                    {
+                                        binding.Speed = speed;
+                                    }
+                                    
+                                }
+                                GUILayout.EndHorizontal();
+                                
+                                GUILayout.BeginHorizontal();
+                                {
+                                    GUILayout.Label($"Direction: {binding.ThumbstickDirection}");
+                                    if (!binding.ThumbstickDirectionSelectOpen)
+                                    {
+                                        if (GUILayout.Button(binding.ThumbstickDirection.ToString()))
+                                            binding.ThumbstickDirectionSelectOpen = true;
+                                    }
+                                    else
+                                    {
+                                        GUILayout.BeginVertical();
+                                        {
+                                            foreach (ThumbstickDirection action in Enum.GetValues(typeof(ThumbstickDirection)))
+                                            {
+                                                if (GUILayout.Button(action.ToString()))
+                                                {
+                                                    binding.ThumbstickDirection = action;
+                                                    binding.ThumbstickDirectionSelectOpen = false;
+                                                }
+                                            }
+                                        }
+                                        GUILayout.EndVertical();
+                                    }
+                                }
+                                GUILayout.EndHorizontal();
+                            }
+                            
+                            if (binding.VRInteractActionSelectOpen)
+                            {
+                                foreach (VRInteractAction action in Enum.GetValues(typeof(VRInteractAction)))
+                                {
+                                    if (GUILayout.Button(action.ToString()))
+                                    {
+                                        binding.InputAction = action;
+                                        binding.VRInteractActionSelectOpen = false;
+                                    }
+                                }
+                            }
+                        }
+
                         if (binding.OutputAction == ControllerAction.FlatscreenFoV)
                         {
                                 GUILayout.Label("Target FoV: " + binding.TargetFoV);

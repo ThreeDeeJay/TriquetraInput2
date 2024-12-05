@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using VTOLAPI;
 using VTOLVR.Multiplayer;
 
 namespace Triquetra.Input
@@ -34,9 +35,10 @@ namespace Triquetra.Input
         FlatscreenCenterInteract,
         FlatscreenFoV,
         FlatscreenMoveCamera,
-        Print
+        NewVRInteract
     }
 
+    
     public static class ControllerActions
     {
         public static class Radio
@@ -321,7 +323,10 @@ namespace Triquetra.Input
 
             internal static VRThrottle FindThrottle()
             {
-                return GameObject.FindObjectOfType<VRThrottle>(false);
+                var vehicleObject = VTAPI.GetPlayersVehicleGameObject();
+                if (vehicleObject)
+                    return vehicleObject.GetComponentInChildren<VRThrottle>(true);
+                return null;
             }
         }
 
@@ -465,12 +470,15 @@ namespace Triquetra.Input
 
             internal static VRJoystick FindJoystick()
             {
-                var joysticks = GameObject.FindObjectsOfType<VRJoystick>(false);
-
-                var joystick = joysticks.FirstOrDefault(stick => stick.name == "joyInteractable_sideFront") ??
-                               joysticks.FirstOrDefault();
-
-                return joystick;
+                var vehicleObject = VTAPI.GetPlayersVehicleGameObject();
+                if (vehicleObject)
+                {
+                    var joysticks = vehicleObject.GetComponentsInChildren<VRJoystick>(true);
+                    var stick = joysticks.FirstOrDefault(vrJoystick => vrJoystick.name == "joyInteractable_sideFront") ??
+                                   joysticks.FirstOrDefault();
+                    return stick;
+                }
+                return null;
             }
 
             private static bool menuButtonPressed = false;
