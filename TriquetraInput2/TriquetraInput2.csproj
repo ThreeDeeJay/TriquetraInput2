@@ -4,6 +4,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Triquetra.Input</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="0Harmony">

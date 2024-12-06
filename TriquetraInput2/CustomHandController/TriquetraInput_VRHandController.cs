@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using HarmonyLib;
 using UnityEngine;
 
 namespace Triquetra.Input.CustomHandController
 {
-    // Creating a strippeder hand controller to run custom vr interactables betterer
+    [HarmonyPatch]
     public class TriquetraInput_VRHandController : VRHandController
     {
         public override void Awake()
@@ -41,51 +42,103 @@ namespace Triquetra.Input.CustomHandController
         {
         }
 
-        public override void HapticPulse(float power)
+        [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.HapticPulse))]
+        [HarmonyPrefix]
+        public static bool P_HapticPulse(VRHandController __instance)
         {
-        }
-
-        public override void Vibrate(float power, float time)
-        {
-        }
-
-        public override bool GetStickPressDown()
-        {
+            if (__instance is not TriquetraInput_VRHandController _instance)
+                return true;
+            
             return false;
         }
 
-        public override bool GetStickPressUp()
+        [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.Vibrate))]
+        [HarmonyPrefix]
+        public static bool P_Vibrate(VRHandController __instance)
         {
+            if (__instance is not TriquetraInput_VRHandController _instance)
+                return true;
+            
             return false;
         }
 
-        public override bool GetSecondButtonDown()
+        [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetStickPressDown))]
+        [HarmonyPrefix]
+        public static bool P_GetStickPressDown(VRHandController __instance, ref bool __result)
         {
+            if (__instance is not TriquetraInput_VRHandController _instance)
+                return true;
+            __result = false;
             return false;
         }
 
-        public override bool GetSecondButtonUp()
+        [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetStickPressUp))]
+        [HarmonyPrefix]
+        public static bool P_GetStickPressUp(VRHandController __instance, ref bool __result)
         {
+            if (__instance is not TriquetraInput_VRHandController _instance)
+                return true;
+            __result = false;
             return false;
         }
 
-        public override bool GetThumbButtonDown()
+        [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetSecondButtonDown))]
+        [HarmonyPrefix]
+        public static bool P_GetSecondButtonDown(VRHandController __instance, ref bool __result)
         {
+            if (__instance is not TriquetraInput_VRHandController _instance)
+                return true;
+            __result = false;
             return false;
         }
 
-        public override bool GetThumbButtonUp()
+        [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetSecondButtonUp))]
+        [HarmonyPrefix]
+        public static bool P_GetSecondButtonUp(VRHandController __instance, ref bool __result)
         {
+            if (__instance is not TriquetraInput_VRHandController _instance)
+                return true;
+            __result = false;
             return false;
         }
 
-        public override bool GetTriggerClickDown()
+        [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetThumbButtonDown))]
+        [HarmonyPrefix]
+        public static bool P_GetThumbButtonDown(VRHandController __instance, ref bool __result)
         {
+            if (__instance is not TriquetraInput_VRHandController _instance)
+                return true;
+            __result = false;
             return false;
         }
 
-        public override bool GetTriggerClickUp()
+        [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetThumbButtonUp))]
+        [HarmonyPrefix]
+        public static bool P_GetThumbButtonUp(VRHandController __instance, ref bool __result)
         {
+            if (__instance is not TriquetraInput_VRHandController _instance)
+                return true;
+            __result = false;
+            return false;
+        }
+
+        [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetTriggerClickDown))]
+        [HarmonyPrefix]
+        public static bool P_GetTriggerClickDown(VRHandController __instance, ref bool __result)
+        {
+            if (__instance is not TriquetraInput_VRHandController _instance)
+                return true;
+            __result = false;
+            return false;
+        }
+
+        [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetTriggerClickUp))]
+        [HarmonyPrefix]
+        public static bool P_GetTriggerClickUp(VRHandController __instance, ref bool __result)
+        {
+            if (__instance is not TriquetraInput_VRHandController _instance)
+                return true;
+            __result = false;
             return false;
         }
         // STICK AXIS
