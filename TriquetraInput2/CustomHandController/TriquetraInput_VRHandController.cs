@@ -9,6 +9,15 @@ namespace Triquetra.Input.CustomHandController
     [HarmonyPatch]
     public class TriquetraInput_VRHandController : VRHandController
     {
+        public bool primaryButtonDown;
+        public bool primaryButtonUp;
+        
+        public bool secondaryButtonDown;
+        public bool secondaryButtonUp;
+        
+        public bool triggerButtonDown;
+        public bool triggerButtonUp;
+        
         public override void Awake()
         {
         }
@@ -19,7 +28,51 @@ namespace Triquetra.Input.CustomHandController
 
         public override void Update()
         {
-            HapticPulse(totalVibePower);
+            // Stick
+            if (stickPressed)
+            {
+                stickPressDown = !wasStickPressed;
+                wasStickPressed = true;
+            }
+            else
+            {
+                stickPressUp = wasStickPressed;
+                wasStickPressed = false;
+            }
+            // Primary
+            if (thumbButtonPressed)
+            {
+                primaryButtonDown = !thumbButtonPressed;
+                thumbButtonPressed = true;
+            }
+            else
+            {
+                primaryButtonUp = thumbButtonPressed;
+                thumbButtonPressed = false;
+            }
+            // Secondary
+            if (secondaryThumbButtonPressed)
+            {
+                secondaryButtonDown = !secondaryThumbButtonPressed;
+                secondaryThumbButtonPressed = true;
+            }
+            else
+            {
+                secondaryButtonUp = secondaryThumbButtonPressed;
+                secondaryThumbButtonPressed = false;
+            }
+            // Trigger
+            if (triggerClicked)
+            {
+                triggerButtonDown = !triggerClicked;
+                triggerClicked = true;
+            }
+            else
+            {
+                triggerButtonUp = triggerClicked;
+                triggerClicked = false;
+            }
+            //HapticPulse(totalVibePower);
         }
 
         public override void OnEnable()
@@ -68,8 +121,8 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
-            __result = false;
-            return false;
+            
+            return _instance.stickPressDown;
         }
 
         [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetStickPressUp))]
@@ -78,8 +131,7 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
-            __result = false;
-            return false;
+            return _instance.stickPressUp;
         }
 
         [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetSecondButtonDown))]
@@ -88,8 +140,7 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
-            __result = false;
-            return false;
+            return _instance.secondaryButtonDown;
         }
 
         [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetSecondButtonUp))]
@@ -98,8 +149,7 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
-            __result = false;
-            return false;
+            return _instance.secondaryButtonUp;
         }
 
         [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetThumbButtonDown))]
@@ -108,8 +158,7 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
-            __result = false;
-            return false;
+            return _instance.primaryButtonDown;
         }
 
         [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetThumbButtonUp))]
@@ -118,8 +167,7 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
-            __result = false;
-            return false;
+            return _instance.primaryButtonUp;
         }
 
         [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetTriggerClickDown))]
@@ -128,8 +176,7 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
-            __result = false;
-            return false;
+            return _instance.triggerButtonDown;
         }
 
         [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetTriggerClickUp))]
@@ -138,8 +185,7 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
-            __result = false;
-            return false;
+            return _instance.triggerButtonUp;
         }
         // STICK AXIS
         public void StickAxis(Vector2 axis)
@@ -171,7 +217,6 @@ namespace Triquetra.Input.CustomHandController
 
         public void ThumbButtonReleased()
         {
-            
             var eventDelegate = (MulticastDelegate)typeof(VRHandController).GetField(nameof(OnSecondaryThumbButtonReleased), BindingFlags.Instance | BindingFlags.Public)?.GetValue(this);
             if (eventDelegate != null)
             {
