@@ -384,7 +384,7 @@ namespace Triquetra.Input
                 interactable.Click(handController);
             }
             
-            float joystickAxis = GetAxisAsFloat(joystickValue);
+            float joystickAxis = GetAxisAsFloat(joystickValue) - 0.5f;
             
             switch (InputAction)
             {
@@ -435,7 +435,7 @@ namespace Triquetra.Input
                             axis.x -= joystickAxis;
                             break;
                     }
-
+                    
                     Vector2 finalAxis = axis;
                     if (!GameSettings.IsThumbstickMode())
                     {
@@ -457,6 +457,10 @@ namespace Triquetra.Input
                                 break;
                         }
                     }
+
+                    // I have no clue if joysticks dont need this so pray
+                    if (IsKeyboard)
+                        finalAxis *= 2; 
                     handController.StickAxis(finalAxis);
                     break;
                 case VRInteractAction.ThumbstickButton:
