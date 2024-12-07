@@ -343,6 +343,10 @@ namespace Triquetra.Input
                         case VRInteractAction.ThumbstickButton:
                             handController.ThumbstickButtonReleased();
                             break;
+                        case VRInteractAction.ThumbstickAxis:
+                            if (!GameSettings.IsThumbstickMode())
+                                handController.ThumbstickButtonReleased();
+                            break;
                     }
                     
                     if (interactable.activeController == handController)
@@ -380,14 +384,12 @@ namespace Triquetra.Input
                 interactable.Click(handController);
             }
             
-            float joystickAxis = GetAxisAsFloat(joystickValue) - 0.5f;
+            float joystickAxis = GetAxisAsFloat(joystickValue);
             
             switch (InputAction)
             {
                 case VRInteractAction.Move:
                     Vector3 moveDir = Vector3.zero;
-                    
-                    
                     
                     switch (ThumbstickDirection)
                     {
@@ -404,7 +406,7 @@ namespace Triquetra.Input
                             moveDir.x -= joystickAxis;
                             break;
                     }
-                    _lastPosition += moveDir * Speed * Time.deltaTime;
+                    _lastPosition += moveDir * (Speed * Time.deltaTime);
                     handController.transform.position = interactable.transform.TransformPoint(_lastPosition);
                     break;
                 case VRInteractAction.PrimaryButton:
@@ -415,6 +417,9 @@ namespace Triquetra.Input
                     break;
                 case VRInteractAction.ThumbstickAxis:
                     Vector2 axis = Vector3.zero;
+                    
+                    
+
                     switch (ThumbstickDirection)
                     {
                         case ThumbstickDirection.Up:
@@ -430,7 +435,29 @@ namespace Triquetra.Input
                             axis.x -= joystickAxis;
                             break;
                     }
-                    handController.StickAxis(axis * Speed * Time.deltaTime);
+
+                    Vector2 finalAxis = axis;
+                    if (!GameSettings.IsThumbstickMode())
+                    {
+                        handController.ThumbstickButtonPressed();
+                        bool xNegative = finalAxis.x < 0;
+                        bool yNegative = finalAxis.y < 0;
+                        switch (ThumbstickDirection)
+                        {
+                            case ThumbstickDirection.Right:
+                            case ThumbstickDirection.Left:
+                                finalAxis.x = Mathf.Clamp(finalAxis.x, xNegative ? -1f : 0.351f, xNegative ? -0.351f : 1);
+                                break;
+                            case ThumbstickDirection.Up:
+                            case ThumbstickDirection.Down:
+                                finalAxis.y = Mathf.Clamp(finalAxis.y, yNegative ? -1f : 0.351f, yNegative ? -0.351f : 1);
+                                break;
+                            case ThumbstickDirection.Press:
+                                finalAxis = Vector2.zero;
+                                break;
+                        }
+                    }
+                    handController.StickAxis(finalAxis);
                     break;
                 case VRInteractAction.ThumbstickButton:
                     handController.ThumbstickButtonPressed();

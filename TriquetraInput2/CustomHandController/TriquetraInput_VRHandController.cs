@@ -121,8 +121,8 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
-            
-            return _instance.stickPressDown;
+            __result = _instance.stickPressDown;
+            return false;
         }
 
         [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetStickPressUp))]
@@ -131,7 +131,8 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
-            return _instance.stickPressUp;
+            __result = _instance.stickPressUp;
+            return false;
         }
 
         [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetSecondButtonDown))]
@@ -140,7 +141,8 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
-            return _instance.secondaryButtonDown;
+            __result = _instance.secondaryButtonDown;
+            return false;
         }
 
         [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetSecondButtonUp))]
@@ -149,7 +151,8 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
-            return _instance.secondaryButtonUp;
+            __result = _instance.secondaryButtonUp;
+            return false;
         }
 
         [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetThumbButtonDown))]
@@ -158,7 +161,8 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
-            return _instance.primaryButtonDown;
+            __result = _instance.primaryButtonDown;
+            return false;
         }
 
         [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetThumbButtonUp))]
@@ -167,7 +171,8 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
-            return _instance.primaryButtonUp;
+            __result = _instance.primaryButtonUp;
+            return false;
         }
 
         [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetTriggerClickDown))]
@@ -176,7 +181,8 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
-            return _instance.triggerButtonDown;
+            __result = _instance.triggerButtonDown;
+            return false;
         }
 
         [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetTriggerClickUp))]
@@ -185,11 +191,15 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
-            return _instance.triggerButtonUp;
+            __result = _instance.triggerButtonUp;
+            return false;
         }
+        
         // STICK AXIS
         public void StickAxis(Vector2 axis)
         {
+            stickAxis = axis;
+            
             var eventDelegate = (MulticastDelegate)typeof(VRHandController).GetField(nameof(OnStickAxis), BindingFlags.Instance | BindingFlags.Public)?.GetValue(this);
             if (eventDelegate != null)
             {
@@ -198,13 +208,13 @@ namespace Triquetra.Input.CustomHandController
                     handler.Method.Invoke(handler.Target, new object[] { this, axis });
                 }
             }
-
-            stickAxis = axis;
         }
 
         // THUMB BUTTON
         public void ThumbButtonPressed()
         {
+            thumbButtonPressed = true;
+            
             var eventDelegate = (MulticastDelegate)typeof(VRHandController).GetField(nameof(OnThumbButtonPressed), BindingFlags.Instance | BindingFlags.Public)?.GetValue(this);
             if (eventDelegate != null)
             {
@@ -217,6 +227,8 @@ namespace Triquetra.Input.CustomHandController
 
         public void ThumbButtonReleased()
         {
+            thumbButtonPressed = false;
+            
             var eventDelegate = (MulticastDelegate)typeof(VRHandController).GetField(nameof(OnSecondaryThumbButtonReleased), BindingFlags.Instance | BindingFlags.Public)?.GetValue(this);
             if (eventDelegate != null)
             {
@@ -230,6 +242,7 @@ namespace Triquetra.Input.CustomHandController
         // SECONDARY THUMB BUTTON
         public void SecondaryThumbButtonPressed()
         {
+            secondaryThumbButtonPressed = true;
             
             var eventDelegate = (MulticastDelegate)typeof(VRHandController).GetField(nameof(SecondaryThumbButtonPressed), BindingFlags.Instance | BindingFlags.Public)?.GetValue(this);
             if (eventDelegate != null)
@@ -239,10 +252,12 @@ namespace Triquetra.Input.CustomHandController
                     handler.Method.Invoke(handler.Target, new object[] { });
                 }
             }
+
         }
 
         public void SecondaryThumbButtonReleased()
         {
+            secondaryThumbButtonPressed = false;
             
             var eventDelegate = (MulticastDelegate)typeof(VRHandController).GetField(nameof(SecondaryThumbButtonReleased), BindingFlags.Instance | BindingFlags.Public)?.GetValue(this);
             if (eventDelegate != null)
@@ -252,11 +267,13 @@ namespace Triquetra.Input.CustomHandController
                     handler.Method.Invoke(handler.Target, new object[] { });
                 }
             }
+            
         }
 
         // THUMBSTICK BUTTON
         public void ThumbstickButtonPressed()
         {
+            stickPressed = true;
             
             var eventDelegate = (MulticastDelegate)typeof(VRHandController).GetField(nameof(OnStickPressed), BindingFlags.Instance | BindingFlags.Public)?.GetValue(this);
             if (eventDelegate != null)
@@ -266,10 +283,12 @@ namespace Triquetra.Input.CustomHandController
                     handler.Method.Invoke(handler.Target, new object[] { });
                 }
             }
+
         }
 
         public void ThumbstickButtonReleased()
         {
+            stickPressed = false;
             
             var eventDelegate = (MulticastDelegate)typeof(VRHandController).GetField(nameof(OnStickUnpressed), BindingFlags.Instance | BindingFlags.Public)?.GetValue(this);
             if (eventDelegate != null)
@@ -284,6 +303,10 @@ namespace Triquetra.Input.CustomHandController
         // TRIGGER AXIS
         public void TriggerAxis(float axis)
         {
+            if (axis < 0.0001f)
+                triggerClicked = false;
+            if (axis > 0.9999f)
+                triggerClicked = true;
             
             var eventDelegate = (MulticastDelegate)typeof(VRHandController).GetField(nameof(OnTriggerAxis), BindingFlags.Instance | BindingFlags.Public)?.GetValue(this);
             if (eventDelegate != null)
@@ -293,6 +316,7 @@ namespace Triquetra.Input.CustomHandController
                     handler.Method.Invoke(handler.Target, new object[] { this, axis });
                 }
             }
+
         }
     }
 }
