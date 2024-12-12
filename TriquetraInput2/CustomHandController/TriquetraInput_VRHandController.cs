@@ -9,14 +9,28 @@ namespace Triquetra.Input.CustomHandController
     [HarmonyPatch]
     public class TriquetraInput_VRHandController : VRHandController
     {
+        private Vector2 _stickAxis;
+        private float _triggerAxis;
+        private bool _stickPressed;
+        private bool _primaryPressed;
+        private bool _secondaryPressed;
+        private bool _triggerPressed;
+        
         public bool primaryButtonDown;
         public bool primaryButtonUp;
+        public bool wasPrimaryButtonPressed;
         
         public bool secondaryButtonDown;
         public bool secondaryButtonUp;
+        public bool wasSecondaryButtonPressed;
         
         public bool triggerButtonDown;
         public bool triggerButtonUp;
+        public bool wasTriggerButtonPressed;
+
+        public bool markedForDestruction;
+
+        private bool _destroyNextFrame;
         
         public override void Awake()
         {
@@ -25,10 +39,37 @@ namespace Triquetra.Input.CustomHandController
         public override void Start()
         {
         }
+        
+        
 
         public override void Update()
         {
-            // Stick
+            stickAxis = _stickAxis;
+            stickPressed = _stickPressed;
+            triggerAxis = _triggerAxis;
+            thumbButtonPressed = _primaryPressed;
+            secondaryThumbButtonPressed = _secondaryPressed;
+            triggerClicked = _triggerPressed;
+            
+            UpdateStickButton();
+            UpdatePrimaryButton();
+            UpdateSecondaryButton();
+            UpdateTriggerButton();
+            
+            
+            
+            if (_destroyNextFrame)
+            {
+                if (activeInteractable)
+                    activeInteractable.UnClick(this);
+                Destroy(gameObject);
+            }
+            else
+                _destroyNextFrame = markedForDestruction;
+        }
+
+        public void UpdateStickButton()
+        {
             if (stickPressed)
             {
                 stickPressDown = !wasStickPressed;
@@ -39,40 +80,49 @@ namespace Triquetra.Input.CustomHandController
                 stickPressUp = wasStickPressed;
                 wasStickPressed = false;
             }
-            // Primary
+        }
+
+        public void UpdatePrimaryButton()
+        {
             if (thumbButtonPressed)
             {
-                primaryButtonDown = !thumbButtonPressed;
-                thumbButtonPressed = true;
+                primaryButtonDown = !wasPrimaryButtonPressed;
+                wasPrimaryButtonPressed = true;
             }
             else
             {
-                primaryButtonUp = thumbButtonPressed;
-                thumbButtonPressed = false;
+                primaryButtonUp = wasPrimaryButtonPressed;
+                wasPrimaryButtonPressed = false;
             }
-            // Secondary
+        }
+
+
+        public void UpdateSecondaryButton()
+        {
             if (secondaryThumbButtonPressed)
             {
-                secondaryButtonDown = !secondaryThumbButtonPressed;
-                secondaryThumbButtonPressed = true;
+                secondaryButtonDown = !wasSecondaryButtonPressed;
+                wasSecondaryButtonPressed = true;
             }
             else
             {
-                secondaryButtonUp = secondaryThumbButtonPressed;
-                secondaryThumbButtonPressed = false;
+                secondaryButtonUp = wasSecondaryButtonPressed;
+                wasSecondaryButtonPressed = false;
             }
-            // Trigger
+        }
+
+        public void UpdateTriggerButton()
+        {
             if (triggerClicked)
             {
-                triggerButtonDown = !triggerClicked;
-                triggerClicked = true;
+                triggerButtonDown = !wasTriggerButtonPressed;
+                wasTriggerButtonPressed = true;
             }
             else
             {
-                triggerButtonUp = triggerClicked;
-                triggerClicked = false;
+                triggerButtonUp = wasTriggerButtonPressed;
+                wasTriggerButtonPressed = false;
             }
-            //HapticPulse(totalVibePower);
         }
 
         public override void OnEnable()
@@ -121,6 +171,7 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
+            //_instance.UpdateStickButton();
             __result = _instance.stickPressDown;
             return false;
         }
@@ -131,27 +182,8 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
+            //_instance.UpdateStickButton();
             __result = _instance.stickPressUp;
-            return false;
-        }
-
-        [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetSecondButtonDown))]
-        [HarmonyPrefix]
-        public static bool P_GetSecondButtonDown(VRHandController __instance, ref bool __result)
-        {
-            if (__instance is not TriquetraInput_VRHandController _instance)
-                return true;
-            __result = _instance.secondaryButtonDown;
-            return false;
-        }
-
-        [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetSecondButtonUp))]
-        [HarmonyPrefix]
-        public static bool P_GetSecondButtonUp(VRHandController __instance, ref bool __result)
-        {
-            if (__instance is not TriquetraInput_VRHandController _instance)
-                return true;
-            __result = _instance.secondaryButtonUp;
             return false;
         }
 
@@ -161,6 +193,7 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
+            //_instance.UpdatePrimaryButton();
             __result = _instance.primaryButtonDown;
             return false;
         }
@@ -171,7 +204,30 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
+            //_instance.UpdatePrimaryButton();
             __result = _instance.primaryButtonUp;
+            return false;
+        }
+
+        [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetSecondButtonDown))]
+        [HarmonyPrefix]
+        public static bool P_GetSecondButtonDown(VRHandController __instance, ref bool __result)
+        {
+            if (__instance is not TriquetraInput_VRHandController _instance)
+                return true;
+            //_instance.UpdateSecondaryButton();
+            __result = _instance.secondaryButtonDown;
+            return false;
+        }
+
+        [HarmonyPatch(typeof(VRHandController), nameof(VRHandController.GetSecondButtonUp))]
+        [HarmonyPrefix]
+        public static bool P_GetSecondButtonUp(VRHandController __instance, ref bool __result)
+        {
+            if (__instance is not TriquetraInput_VRHandController _instance)
+                return true;
+            //_instance.UpdateSecondaryButton();
+            __result = _instance.secondaryButtonUp;
             return false;
         }
 
@@ -181,6 +237,7 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
+            //_instance.UpdateTriggerButton();
             __result = _instance.triggerButtonDown;
             return false;
         }
@@ -191,6 +248,7 @@ namespace Triquetra.Input.CustomHandController
         {
             if (__instance is not TriquetraInput_VRHandController _instance)
                 return true;
+            //_instance.UpdateTriggerButton();
             __result = _instance.triggerButtonUp;
             return false;
         }
@@ -198,7 +256,7 @@ namespace Triquetra.Input.CustomHandController
         // STICK AXIS
         public void StickAxis(Vector2 axis)
         {
-            stickAxis = axis;
+            _stickAxis = axis;
             
             var eventDelegate = (MulticastDelegate)typeof(VRHandController).GetField(nameof(OnStickAxis), BindingFlags.Instance | BindingFlags.Public)?.GetValue(this);
             if (eventDelegate != null)
@@ -213,7 +271,7 @@ namespace Triquetra.Input.CustomHandController
         // THUMB BUTTON
         public void ThumbButtonPressed()
         {
-            thumbButtonPressed = true;
+            _primaryPressed = true;
             
             var eventDelegate = (MulticastDelegate)typeof(VRHandController).GetField(nameof(OnThumbButtonPressed), BindingFlags.Instance | BindingFlags.Public)?.GetValue(this);
             if (eventDelegate != null)
@@ -227,7 +285,7 @@ namespace Triquetra.Input.CustomHandController
 
         public void ThumbButtonReleased()
         {
-            thumbButtonPressed = false;
+            _primaryPressed = false;
             
             var eventDelegate = (MulticastDelegate)typeof(VRHandController).GetField(nameof(OnSecondaryThumbButtonReleased), BindingFlags.Instance | BindingFlags.Public)?.GetValue(this);
             if (eventDelegate != null)
@@ -242,7 +300,7 @@ namespace Triquetra.Input.CustomHandController
         // SECONDARY THUMB BUTTON
         public void SecondaryThumbButtonPressed()
         {
-            secondaryThumbButtonPressed = true;
+            _secondaryPressed = true;
             
             var eventDelegate = (MulticastDelegate)typeof(VRHandController).GetField(nameof(SecondaryThumbButtonPressed), BindingFlags.Instance | BindingFlags.Public)?.GetValue(this);
             if (eventDelegate != null)
@@ -257,7 +315,7 @@ namespace Triquetra.Input.CustomHandController
 
         public void SecondaryThumbButtonReleased()
         {
-            secondaryThumbButtonPressed = false;
+            _secondaryPressed = false;
             
             var eventDelegate = (MulticastDelegate)typeof(VRHandController).GetField(nameof(SecondaryThumbButtonReleased), BindingFlags.Instance | BindingFlags.Public)?.GetValue(this);
             if (eventDelegate != null)
@@ -273,7 +331,7 @@ namespace Triquetra.Input.CustomHandController
         // THUMBSTICK BUTTON
         public void ThumbstickButtonPressed()
         {
-            stickPressed = true;
+            _stickPressed = true;
             
             var eventDelegate = (MulticastDelegate)typeof(VRHandController).GetField(nameof(OnStickPressed), BindingFlags.Instance | BindingFlags.Public)?.GetValue(this);
             if (eventDelegate != null)
@@ -288,7 +346,7 @@ namespace Triquetra.Input.CustomHandController
 
         public void ThumbstickButtonReleased()
         {
-            stickPressed = false;
+            _stickPressed = false;
             
             var eventDelegate = (MulticastDelegate)typeof(VRHandController).GetField(nameof(OnStickUnpressed), BindingFlags.Instance | BindingFlags.Public)?.GetValue(this);
             if (eventDelegate != null)
@@ -304,9 +362,9 @@ namespace Triquetra.Input.CustomHandController
         public void TriggerAxis(float axis)
         {
             if (axis < 0.0001f)
-                triggerClicked = false;
+                _triggerPressed = false;
             if (axis > 0.9999f)
-                triggerClicked = true;
+                _triggerPressed = true;
             
             var eventDelegate = (MulticastDelegate)typeof(VRHandController).GetField(nameof(OnTriggerAxis), BindingFlags.Instance | BindingFlags.Public)?.GetValue(this);
             if (eventDelegate != null)

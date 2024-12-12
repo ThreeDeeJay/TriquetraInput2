@@ -15,6 +15,8 @@ namespace Triquetra.Input
 {
     public class TriquetraInputBinders : MonoBehaviour
     {
+        public static TriquetraInputBinders Instance;
+        
         public List<POVFacing> POVDirections = new List<POVFacing>() { POVFacing.Up, POVFacing.Right, POVFacing.Down, POVFacing.Left }; // TODO fix/unify
 
         public bool showWindow = true;
@@ -32,6 +34,8 @@ namespace Triquetra.Input
                 Cursor.visible = true;
                 Cursor.lockState = CursorLockMode.None;
             };
+            
+            Instance = this;
         }
 
         public void OnGUI()
@@ -766,7 +770,7 @@ namespace Triquetra.Input
 
         private Vector3 _mouseXY = Vector3.zero;
 
-        public void Update()
+        public void LateUpdate()
         {
             if (detectingKeyKK != null)
                 DetectDownKey();

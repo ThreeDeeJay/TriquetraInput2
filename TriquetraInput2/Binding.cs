@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Serialization;
@@ -326,6 +327,19 @@ namespace Triquetra.Input
             }
         }
 
+        /*private IEnumerator DestroyControllerRoutine(GameObject controllerGameObjectObj)
+        {
+            if (controllerGameObjectObj == null)
+            {
+                Debug.LogError($"[TriquetraInput2] No controller to destroy?????");
+                yield break;
+            }
+            
+            yield return new WaitForEndOfFrame();
+            Debug.Log($"Destroying controller {controllerGameObjectObj}");
+            Object.Destroy(controllerGameObjectObj);
+        }*/
+
         public void RunVRInteractAction(VRInteractable interactable, int joystickValue)
         {
             if (handController)
@@ -348,11 +362,9 @@ namespace Triquetra.Input
                                 handController.ThumbstickButtonReleased();
                             break;
                     }
-                    
-                    if (interactable.activeController == handController)
-                        interactable.UnClick(handController);
-                    
-                    Object.Destroy(handController.gameObject);
+
+                    // Destroy at end of next frame so joysticks and stuff can access its variables
+                    handController.markedForDestruction = true;
                     handController = null;
                     _lastPosition = Vector3.zero;
 
@@ -461,6 +473,7 @@ namespace Triquetra.Input
                     // I have no clue if joysticks dont need this so pray
                     if (IsKeyboard)
                         finalAxis *= 2; 
+                    
                     handController.StickAxis(finalAxis);
                     break;
                 case VRInteractAction.ThumbstickButton:
