@@ -153,7 +153,7 @@ namespace Triquetra.Input
                     bool isCollapsed = false;
                     if (!collapsedBindings.TryGetValue(binding, out isCollapsed))
                     {
-                        collapsedBindings[binding] = false;
+                        collapsedBindings[binding] = true;
                     }
 
                     if (isCollapsed)
