@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   Windows:
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
 
     - name: Clone repo and submodules
@@ -40,11 +40,11 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: nuget restore ${{env.Solution}}
 
-    - name: Install .NET Framework 4.6.1 Developer Pack
+    - name: Install .NET Framework 4.7.2 Developer Pack
       shell: powershell
       run: |
-        Invoke-WebRequest -Method Get -Uri https://go.microsoft.com/fwlink/?linkid=2099470 -OutFile ndp461-devpack-kb3105179-enu.exe -UseBasicParsing
-        Start-Process -Wait ./ndp461-devpack-kb3105179-enu.exe -ArgumentList "/Quiet"
+        Invoke-WebRequest -Method Get -Uri https://go.microsoft.com/fwlink/?linkid=874338 -OutFile NDP472-DevPack-ENU.exe -UseBasicParsing
+        Start-Process -Wait ./NDP472-DevPack-ENU.exe -ArgumentList "/Quiet"
 
     - name: Build
       run: msbuild /m ${{env.Solution}} #/p:Configuration="${{env.Configuration}}" /p:Platform="${{env.Platform}}" /p:IncludePath="C:\Path\to\Include" /p:LibPath="C:\Path\to\Lib" /p:AdditionalIncludePaths="C:\Path\to\external\include" /p:AdditionalLibraryDirectories="C:\Path\to\external\lib" /p:LanguageStandard="stdcpp17"
