@@ -52,8 +52,8 @@ jobs:
     - name: Dependencies
       run: |
         curl https://raw.githubusercontent.com/frdhog/TriquetraInteractions/master/Builds/TriquetraInteractions.dll -o "Dependencies\TriquetraInteractions.dll"
-        cp "%userprofile%\.nuget\packages\sharpdx\4.2.0\lib\net45\SharpDX.dll" "Dependencies\0SharpDX.dll"
-        cp "%userprofile%\.nuget\packages\sharpdx.directinput\4.2.0\lib\net45\SharpDX.DirectInput.dll" "Dependencies\SharpDX.DirectInput.dll"
+        cp "$env:USERPROFILE\.nuget\packages\sharpdx\4.2.0\lib\net45\SharpDX.dll" "Dependencies\0SharpDX.dll"
+        cp "$env:USERPROFILE\.nuget\packages\sharpdx.directinput\4.2.0\lib\net45\SharpDX.DirectInput.dll" "Dependencies\SharpDX.DirectInput.dll"
 
     - name: Build
       run: msbuild /m ${{env.Solution}} #/p:Configuration="${{env.Configuration}}" /p:Platform="${{env.Platform}}" /p:IncludePath="C:\Path\to\Include" /p:LibPath="C:\Path\to\Lib" /p:AdditionalIncludePaths="C:\Path\to\external\include" /p:AdditionalLibraryDirectories="C:\Path\to\external\lib" /p:LanguageStandard="stdcpp17"
